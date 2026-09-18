@@ -4,9 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BackupController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('backups.index');
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -19,7 +18,6 @@ Route::get(
     [BackupController::class, 'index']
 )->name('backups.index');
 
-
 /*
 |--------------------------------------------------------------------------
 | Run Backup
@@ -30,7 +28,6 @@ Route::post(
     '/backups/run',
     [BackupController::class, 'runBackup']
 )->name('backups.run');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +40,27 @@ Route::post(
     [BackupController::class, 'cleanup']
 )->name('backups.cleanup');
 
+/*
+|--------------------------------------------------------------------------
+| Module 1: 1-Click Database Restore & Rollback Wizard
+|--------------------------------------------------------------------------
+*/
+
+Route::post(
+    '/backups/{filename}/restore',
+    [BackupController::class, 'restore']
+)->name('backups.restore');
+
+/*
+|--------------------------------------------------------------------------
+| Module 2: Automated Backup Integrity & Archive Health Verifier
+|--------------------------------------------------------------------------
+*/
+
+Route::post(
+    '/backups/{filename}/verify',
+    [BackupController::class, 'verify']
+)->name('backups.verify');
 
 /*
 |--------------------------------------------------------------------------
@@ -55,7 +73,6 @@ Route::get(
     [BackupController::class, 'show']
 )->name('backups.show');
 
-
 /*
 |--------------------------------------------------------------------------
 | Download
@@ -67,7 +84,6 @@ Route::get(
     [BackupController::class, 'download']
 )->name('backups.download');
 
-
 /*
 |--------------------------------------------------------------------------
 | Bulk Delete
@@ -78,7 +94,6 @@ Route::post(
     '/backups/bulk-delete',
     [BackupController::class, 'bulkDelete']
 )->name('backups.bulk-delete');
-
 
 /*
 |--------------------------------------------------------------------------
