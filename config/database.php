@@ -68,10 +68,10 @@ return [
         ])
         : [],
 
-    'dump' => [
-        'dump_binary_path' => 'C:\\xampp\\mysql\\bin',
+        'dump' => [
+            'dump_binary_path' => env('DUMP_BINARY_PATH', is_dir('D:\\xampp\\mysql\\bin') ? 'D:\\xampp\\mysql\\bin' : 'C:\\xampp\\mysql\\bin'),
+        ],
     ],
-],
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

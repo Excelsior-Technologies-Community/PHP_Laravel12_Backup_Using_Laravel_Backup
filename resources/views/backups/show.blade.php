@@ -237,18 +237,60 @@
                 </div>
 
 
-                {{-- Format --}}
+                {{-- Compression Ratio --}}
 
                 <div class="col-md-4">
 
                     <div class="detail-item">
 
                         <div class="detail-label">
-                            File Format
+                            Compression & Savings
+                        </div>
+
+                        <div class="detail-value text-primary">
+                            ⚡ {{ $backup['compression_ratio'] }}% Saved
+                        </div>
+
+                        <small class="text-muted">
+                            Raw size: {{ $backup['uncompressed_size_formatted'] }}
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                {{-- Database Dump --}}
+
+                <div class="col-md-4">
+
+                    <div class="detail-item">
+
+                        <div class="detail-label">
+                            Database Dump
                         </div>
 
                         <div class="detail-value">
-                            {{ $backup['extension'] }}
+                            {{ $backup['db_dump_name'] ?? 'Not Detected' }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                {{-- Archive Content Count --}}
+
+                <div class="col-md-4">
+
+                    <div class="detail-item">
+
+                        <div class="detail-label">
+                            Archive Entries
+                        </div>
+
+                        <div class="detail-value">
+                            {{ $backup['files_count'] }} Files / Dirs
                         </div>
 
                     </div>
@@ -266,7 +308,7 @@
                             Storage Path
                         </div>
 
-                        <div class="detail-value">
+                        <div class="detail-value font-monospace">
                             {{ $backup['path'] }}
                         </div>
 
@@ -280,8 +322,35 @@
             {{-- Actions --}}
 
             <div
-                class="d-flex gap-2 mt-4 flex-wrap"
+                class="d-flex gap-2 mt-4 flex-wrap align-items-center"
             >
+
+                <form
+                    action="{{ route('backups.verify', ['filename' => $backup['name']]) }}"
+                    method="POST"
+                >
+                    @csrf
+                    <button
+                        type="submit"
+                        class="btn btn-outline-info"
+                    >
+                        🛡️ Verify Integrity
+                    </button>
+                </form>
+
+                <form
+                    action="{{ route('backups.restore', ['filename' => $backup['name']]) }}"
+                    method="POST"
+                    onsubmit="return confirm('⚠️ Restore this backup now?\nA Pre-Restore Safety Snapshot will be created automatically before importing.')"
+                >
+                    @csrf
+                    <button
+                        type="submit"
+                        class="btn btn-success"
+                    >
+                        🔄 1-Click Restore Database
+                    </button>
+                </form>
 
                 <a
                     href="{{ route('backups.download', ['filename' => $backup['name']]) }}"

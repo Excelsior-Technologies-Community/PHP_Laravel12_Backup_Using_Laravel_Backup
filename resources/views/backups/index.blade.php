@@ -121,6 +121,28 @@
             background: #f8fafc;
         }
 
+        .badge-verified-success {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .badge-verified-warning {
+            background: #fef9c3;
+            color: #a16207;
+            border: 1px solid #fef08a;
+        }
+
+        .badge-verified-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .growth-trend-table th, .growth-trend-table td {
+            font-size: 13px;
+        }
+
     </style>
 
 </head>
@@ -144,7 +166,7 @@
             </h2>
 
             <p class="text-muted mb-0">
-                Manage Laravel application and database backups
+                Manage Laravel application and database backups with 1-Click Restore, Health Verifier & Analytics
             </p>
 
         </div>
@@ -213,6 +235,120 @@
     @endif
 
 
+    {{-- Restore Summary Banner (Pre-Restore Safety Snapshot) --}}
+
+    @if(session('restore_summary'))
+
+        @php $summary = session('restore_summary'); @endphp
+
+        <div class="alert alert-primary alert-dismissible fade show border-0 shadow-sm mb-4">
+
+            <div class="d-flex align-items-start gap-3">
+
+                <div style="font-size: 30px;">
+                    🛡️
+                </div>
+
+                <div class="flex-grow-1">
+
+                    <h5 class="fw-bold mb-1 text-primary">
+                        1-Click Database Restore Completed Successfully
+                    </h5>
+
+                    <p class="mb-2 text-dark">
+                        Restored archive <code>{{ $summary['backup_file'] }}</code> ({{ $summary['tables_count'] }} database tables/statements processed).
+                    </p>
+
+                    <div class="p-3 bg-white rounded-3 border">
+
+                        <div class="fw-bold text-success mb-1">
+                            ✅ Pre-Restore Safety Snapshot Created:
+                        </div>
+
+                        <div class="small text-muted font-monospace mb-1">
+                            Snapshot File: <strong>{{ $summary['snapshot_file'] }}</strong> (Size: {{ $summary['snapshot_size'] }})
+                        </div>
+
+                        <div class="small text-muted">
+                            Restored at: {{ $summary['restored_at'] }} | Safety point saved on disk for instant rollback if needed.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+            ></button>
+
+        </div>
+
+    @endif
+
+
+    {{-- Verification Modal / Results Flash --}}
+
+    @if(session('verification_modal'))
+
+        @php $v = session('verification_modal'); @endphp
+
+        <div class="alert alert-{{ $v['badge_class'] === 'danger' ? 'danger' : ($v['badge_class'] === 'warning' ? 'warning' : 'success') }} alert-dismissible fade show shadow-sm mb-4">
+
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+
+                <h5 class="fw-bold mb-0">
+                    🛡️ Archive Integrity Report: {{ $v['filename'] }}
+                </h5>
+
+                <span class="badge bg-{{ $v['badge_class'] }} fs-6 px-3 py-2">
+                    {{ $v['badge'] }} (Score: {{ $v['score'] }}%)
+                </span>
+
+            </div>
+
+            <p class="mb-2">
+                {{ $v['details'] }}
+            </p>
+
+            <div class="row g-2 small bg-white p-3 rounded-3 text-dark border">
+
+                <div class="col-md-3">
+                    <strong>Header Check:</strong><br>
+                    <span class="text-success">{{ $v['header_check'] }}</span>
+                </div>
+
+                <div class="col-md-3">
+                    <strong>CRC32 Checksum:</strong><br>
+                    <span>{{ $v['crc_check'] }}</span>
+                </div>
+
+                <div class="col-md-3">
+                    <strong>Database Dump:</strong><br>
+                    <span>{{ $v['db_dump_check'] }} ({{ $v['db_dump_size'] }})</span>
+                </div>
+
+                <div class="col-md-3">
+                    <strong>Compression:</strong><br>
+                    <span>{{ $v['compressed_size'] }} (Saved {{ $v['compression_ratio'] }})</span>
+                </div>
+
+            </div>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+            ></button>
+
+        </div>
+
+    @endif
+
+
     {{-- Error --}}
 
     @if(session('error'))
@@ -257,12 +393,12 @@
     @endif
 
 
-    {{-- Statistics --}}
+    {{-- Statistics & Compression Analytics KPIs --}}
 
     <div class="row g-4 mb-4">
 
 
-        {{-- Total --}}
+        {{-- Total Backups --}}
 
         <div class="col-md-4 col-lg-2">
 
@@ -289,7 +425,7 @@
         </div>
 
 
-        {{-- Total Size --}}
+        {{-- Total Compressed Size --}}
 
         <div class="col-md-4 col-lg-2">
 
@@ -302,7 +438,7 @@
                     </div>
 
                     <div class="text-muted small">
-                        Total Size
+                        Compressed Size
                     </div>
 
                     <h3 class="fw-bold">
@@ -316,25 +452,29 @@
         </div>
 
 
-        {{-- Average --}}
+        {{-- Storage Saved & Compression Ratio Analytics --}}
 
-        <div class="col-md-4 col-lg-2">
+        <div class="col-md-4 col-lg-3">
 
-            <div class="card stat-card h-100">
+            <div class="card stat-card h-100 border-start border-primary border-4">
 
                 <div class="card-body">
 
-                    <div class="stat-icon mb-3">
-                        📊
+                    <div class="stat-icon mb-3 bg-primary-subtle text-primary">
+                        ⚡
                     </div>
 
                     <div class="text-muted small">
-                        Average Size
+                        Compression & Storage Saved
                     </div>
 
-                    <h3 class="fw-bold">
-                        {{ $averageSize > 0 ? number_format($averageSize / 1024 / 1024, 2) . ' MB' : '0 MB' }}
+                    <h3 class="fw-bold text-primary mb-1">
+                        {{ $overallCompressionRatio }}% Saved
                     </h3>
+
+                    <small class="text-muted">
+                        {{ $totalStorageSaved > 0 ? number_format($totalStorageSaved / 1024 / 1024, 2) . ' MB Saved' : 'Optimal' }}
+                    </small>
 
                 </div>
 
@@ -343,7 +483,7 @@
         </div>
 
 
-        {{-- Latest --}}
+        {{-- Latest Backup --}}
 
         <div class="col-md-4 col-lg-2">
 
@@ -384,50 +524,9 @@
         </div>
 
 
-        {{-- Oldest --}}
+        {{-- Backup Health --}}
 
-        <div class="col-md-4 col-lg-2">
-
-            <div class="card stat-card h-100">
-
-                <div class="card-body">
-
-                    <div class="stat-icon mb-3">
-                        🗓️
-                    </div>
-
-                    <div class="text-muted small">
-                        Oldest Backup
-                    </div>
-
-                    @if($oldestBackupData)
-
-                        <h6 class="fw-bold mb-1">
-                            {{ $oldestBackupData['date'] }}
-                        </h6>
-
-                        <small class="text-muted">
-                            {{ $oldestBackupData['size'] }}
-                        </small>
-
-                    @else
-
-                        <div class="text-muted">
-                            None
-                        </div>
-
-                    @endif
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Health --}}
-
-        <div class="col-md-4 col-lg-2">
+        <div class="col-md-4 col-lg-3">
 
             <div class="card stat-card h-100">
 
@@ -438,7 +537,7 @@
                     </div>
 
                     <div class="text-muted small">
-                        Backup Health
+                        Backup System Health
                     </div>
 
                     <span
@@ -456,28 +555,24 @@
     </div>
 
 
-    {{-- Storage Health --}}
+    {{-- Storage Health & Growth Trends Section --}}
 
-    <div class="card dashboard-card mb-4">
+    <div class="row g-4 mb-4">
 
-        <div class="card-body">
+        {{-- Disk Storage Bar --}}
+        <div class="col-lg-6">
 
-            <div class="row align-items-center">
+            <div class="card dashboard-card h-100">
 
-                <div class="col-md-4">
+                <div class="card-body">
 
                     <h5 class="fw-bold mb-1">
-                        💽 Storage Health
+                        💽 Storage Capacity & Health
                     </h5>
 
-                    <p class="text-muted mb-0">
-                        Disk usage for backup storage
+                    <p class="text-muted small mb-3">
+                        Disk usage for backup destination: <code>{{ $storageStats['disk'] }}</code>
                     </p>
-
-                </div>
-
-
-                <div class="col-md-8">
 
                     <div
                         class="d-flex justify-content-between mb-2"
@@ -496,10 +591,10 @@
 
                     </div>
 
-                    <div class="progress">
+                    <div class="progress mb-2">
 
                         <div
-                            class="progress-bar"
+                            class="progress-bar bg-{{ $storageStats['usage_percent'] > 85 ? 'danger' : ($storageStats['usage_percent'] > 60 ? 'warning' : 'primary') }}"
                             role="progressbar"
                             style="width: {{ min(100, $storageStats['usage_percent']) }}%"
                         ></div>
@@ -519,6 +614,88 @@
                         </small>
 
                     </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        {{-- Daily Storage Growth Trends Timeline --}}
+        <div class="col-lg-6">
+
+            <div class="card dashboard-card h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+
+                        <h5 class="fw-bold mb-0">
+                            📈 Storage Growth Trends
+                        </h5>
+
+                        <span class="badge bg-secondary-subtle text-secondary small">
+                            Daily Activity
+                        </span>
+
+                    </div>
+
+                    <p class="text-muted small mb-2">
+                        Daily backup volume and data change timeline
+                    </p>
+
+                    @if(count($growthTrends) > 0)
+
+                        <div class="table-responsive" style="max-height: 140px; overflow-y: auto;">
+
+                            <table class="table table-sm growth-trend-table mb-0">
+
+                                <thead>
+
+                                    <tr class="text-muted">
+                                        <th>Date</th>
+                                        <th>Backups</th>
+                                        <th>Total Volume</th>
+                                        <th>Daily Trend</th>
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    @foreach($growthTrends as $trend)
+
+                                        <tr>
+                                            <td class="fw-medium">{{ $trend['date_formatted'] }}</td>
+                                            <td><span class="badge bg-light text-dark border">{{ $trend['count'] }}</span></td>
+                                            <td>{{ $trend['size_formatted'] }}</td>
+                                            <td>
+                                                @if($trend['change_mb'] > 0)
+                                                    <span class="text-danger small">▲ +{{ $trend['change_mb'] }} MB</span>
+                                                @elseif($trend['change_mb'] < 0)
+                                                    <span class="text-success small">▼ {{ $trend['change_mb'] }} MB</span>
+                                                @else
+                                                    <span class="text-muted small">— Steady</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+
+                                    @endforeach
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    @else
+
+                        <div class="text-muted small text-center py-4">
+                            No trend data available yet.
+                        </div>
+
+                    @endif
 
                 </div>
 
@@ -884,7 +1061,11 @@
 
                                 <th>Backup File</th>
 
-                                <th>Size</th>
+                                <th>Compressed Size</th>
+
+                                <th>Compression & Savings</th>
+
+                                <th>Integrity Status</th>
 
                                 <th>Created</th>
 
@@ -934,12 +1115,54 @@
                                             📦 {{ $backup['name'] }}
                                         </div>
 
+                                        @if($backup['has_db_dump'])
+                                            <span class="badge bg-secondary-subtle text-secondary" style="font-size: 11px;">
+                                                🗄️ Database Dump Included
+                                            </span>
+                                        @endif
+
                                     </td>
 
 
                                     <td>
 
-                                        {{ $backup['size_formatted'] }}
+                                        <span class="fw-semibold">{{ $backup['size_formatted'] }}</span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <div>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                                ⚡ {{ $backup['compression_ratio'] }}% Saved
+                                            </span>
+                                        </div>
+
+                                        <small class="text-muted" style="font-size: 11px;">
+                                            Raw: {{ $backup['uncompressed_size_formatted'] }}
+                                        </small>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        @if(!empty($backup['verification']))
+
+                                            @php $ver = $backup['verification']; @endphp
+
+                                            <span class="badge badge-verified-{{ $ver['badge_class'] }} px-2 py-1">
+                                                {{ $ver['badge_class'] === 'success' ? '🟢' : ($ver['badge_class'] === 'warning' ? '🟡' : '🔴') }} {{ $ver['badge'] }}
+                                            </span>
+
+                                        @else
+
+                                            <span class="badge bg-light text-muted border">
+                                                ⚪ Unverified
+                                            </span>
+
+                                        @endif
 
                                     </td>
 
@@ -973,14 +1196,48 @@
                                     <td>
 
                                         <div
-                                            class="d-flex justify-content-end gap-2 flex-wrap"
+                                            class="d-flex justify-content-end gap-1 flex-wrap"
                                         >
+
+                                            {{-- Integrity Verify --}}
+
+                                            <form
+                                                action="{{ route('backups.verify', ['filename' => $backup['name']]) }}"
+                                                method="POST"
+                                                class="d-inline"
+                                            >
+
+                                                @csrf
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-outline-info"
+                                                    title="Scan Checksum & Verify Dump Integrity"
+                                                >
+                                                    🛡️ Verify
+                                                </button>
+
+                                            </form>
+
+
+                                            {{-- 1-Click Database Restore --}}
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-success"
+                                                onclick="openRestoreModal('{{ $backup['name'] }}', '{{ $backup['size_formatted'] }}', '{{ date('d M Y, h:i A', $backup['last_modified']) }}')"
+                                                title="1-Click Restore with Safety Snapshot"
+                                            >
+                                                🔄 Restore
+                                            </button>
+
 
                                             {{-- Details --}}
 
                                             <a
                                                 href="{{ route('backups.show', ['filename' => $backup['name']]) }}"
                                                 class="btn btn-sm btn-outline-dark"
+                                                title="View Archive Details"
                                             >
                                                 👁 Details
                                             </a>
@@ -991,6 +1248,7 @@
                                             <a
                                                 href="{{ route('backups.download', ['filename' => $backup['name']]) }}"
                                                 class="btn btn-sm btn-outline-primary"
+                                                title="Download ZIP File"
                                             >
                                                 ⬇ Download
                                             </a>
@@ -1001,6 +1259,7 @@
                                             <form
                                                 action="{{ route('backups.destroy', ['filename' => $backup['name']]) }}"
                                                 method="POST"
+                                                class="d-inline"
                                             >
 
                                                 @csrf
@@ -1011,6 +1270,7 @@
                                                     type="submit"
                                                     class="btn btn-sm btn-outline-danger"
                                                     onclick="return confirm('Are you sure you want to permanently delete this backup?')"
+                                                    title="Delete Backup"
                                                 >
                                                     🗑 Delete
                                                 </button>
@@ -1247,7 +1507,90 @@
         }
     }
 
+    function openRestoreModal(filename, size, date)
+    {
+        document.getElementById('restoreArchiveName').innerText = filename;
+        document.getElementById('restoreArchiveSize').innerText = size;
+        document.getElementById('restoreArchiveDate').innerText = date;
+
+        const form = document.getElementById('restoreForm');
+        form.action = '/backups/' + encodeURIComponent(filename) + '/restore';
+
+        const modal = new bootstrap.Modal(document.getElementById('restoreConfirmModal'));
+        modal.show();
+    }
+
 </script>
+
+
+{{-- 1-Click Database Restore Confirmation Modal --}}
+
+<div class="modal fade" id="restoreConfirmModal" tabindex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header bg-danger text-white">
+
+                <h5 class="modal-title fw-bold" id="restoreModalLabel">
+                    ⚠️ 1-Click Database Restore Wizard
+                </h5>
+
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+
+            </div>
+
+            <div class="modal-body p-4">
+
+                <div class="mb-3">
+                    <p class="mb-1 text-muted small">Selected Archive:</p>
+                    <div class="p-2 bg-light rounded border fw-bold text-dark font-monospace" id="restoreArchiveName">
+                        -
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small mt-1">
+                        <span>Size: <strong id="restoreArchiveSize">-</strong></span>
+                        <span>Created: <strong id="restoreArchiveDate">-</strong></span>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 shadow-sm d-flex align-items-start gap-2 mb-3">
+                    <div class="fs-4">🛡️</div>
+                    <div class="small">
+                        <strong>Pre-Restore Safety Snapshot Guaranteed:</strong>
+                        Before restoring this backup, our system will automatically create a live snapshot of your current database so no data is ever lost and you can rollback at any time.
+                    </div>
+                </div>
+
+                <p class="text-danger small mb-0 fw-semibold">
+                    Are you sure you want to restore and replace current database tables with this backup?
+                </p>
+
+            </div>
+
+            <div class="modal-footer bg-light">
+
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <form id="restoreForm" method="POST" action="">
+
+                    @csrf
+
+                    <button type="submit" class="btn btn-danger fw-semibold px-4" onclick="this.innerHTML='⏳ Restoring Database...'; this.disabled=true; this.form.submit();">
+                        🔄 Confirm & Restore Live DB
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
 
 <script
